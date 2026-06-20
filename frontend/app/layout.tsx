@@ -6,6 +6,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "PurchaseIQ",
   description: "Customer purchase pattern intelligence platform",
+  icons: {
+    icon: "/purchaseiq-logo.png",
+    shortcut: "/purchaseiq-logo.png",
+    apple: "/purchaseiq-logo.png",
+  },
 };
 
 export default function RootLayout({

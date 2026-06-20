@@ -98,6 +98,37 @@ class DatasetControllerTest {
     }
 
     @Test
+    void uploadsDatasetWithMappedColumns() throws Exception {
+        String renamedCsv = """
+                Customer No,Years,Sex,Item,Type,Units,Unit Cost,Order Date
+                C001,31,Female,Laptop,Electronics,1,700,2026-01-15
+                C002,28,Male,Chair,Furniture,2,120,2026-01-16
+                """;
+        String mapping = """
+                {
+                  "CustomerID": "Customer No",
+                  "Age": "Years",
+                  "Gender": "Sex",
+                  "Product": "Item",
+                  "Category": "Type",
+                  "Quantity": "Units",
+                  "Price": "Unit Cost",
+                  "PurchaseDate": "Order Date"
+                }
+                """;
+
+        mvc.perform(multipart("/api/datasets/upload")
+                        .file(csv("mapped.csv", renamedCsv))
+                        .file(new MockMultipartFile("mapping", "", "application/json", mapping.getBytes())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.recordCount").value(2))
+                .andExpect(jsonPath("$.issueCount").value(0));
+
+        assertThat(customerRepository.count()).isEqualTo(2);
+        assertThat(productRepository.count()).isEqualTo(2);
+    }
+
+    @Test
     void rejectsEmptyDataset() throws Exception {
         String headerOnly = "CustomerID,Age,Gender,Product,Category,Quantity,Price,PurchaseDate\n";
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import type { ReactNode } from "react"
-import { Code2, LayoutDashboard, LineChart, LogIn, ShieldCheck } from "lucide-react"
+import { Code2, Database, LayoutDashboard, LineChart, LogIn } from "lucide-react"
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
 
 import { GitHubLink } from "@/components/github-link"
@@ -26,12 +26,11 @@ export function PublicShell({ children }: { children: ReactNode }) {
             <a href="#workflow" className="transition hover:text-emerald-700">
               Workflow
             </a>
-            <a href="#security" className="transition hover:text-emerald-700">
-              Security
+            <a href="#datasets" className="transition hover:text-emerald-700">
+              Datasets
             </a>
           </nav>
           <div className="flex items-center gap-2">
-            <GitHubLink className="border-black/15 text-neutral-900 hover:bg-neutral-100 hover:text-neutral-950" />
             <Show when="signed-out">
               <>
                 <SignInButton>
@@ -61,6 +60,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
                 <UserButton />
               </>
             </Show>
+                        
           </div>
         </div>
       </header>
@@ -72,8 +72,8 @@ export function PublicShell({ children }: { children: ReactNode }) {
           <Logo className="scale-90 origin-left" />
           <div className="flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="size-4 text-emerald-600" />
-              Clerk secured
+              <Database className="size-4 text-emerald-600" />
+              Versioned datasets
             </span>
             <span className="inline-flex items-center gap-1.5">
               <LineChart className="size-4 text-emerald-700" />

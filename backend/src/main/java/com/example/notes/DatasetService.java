@@ -60,6 +60,11 @@ public class DatasetService {
 
     @Transactional
     public DatasetUploadResponse upload(MultipartFile file) {
+        return upload(file, Map.of());
+    }
+
+    @Transactional
+    public DatasetUploadResponse upload(MultipartFile file, Map<String, String> columnMapping) {
         validateFile(file);
         String originalFileName = safeFileName(file.getOriginalFilename());
         List<List<String>> rows = parseCsv(file);
@@ -67,7 +72,7 @@ public class DatasetService {
             throw new DatasetUploadException(HttpStatus.BAD_REQUEST, "Dataset empty");
         }
 
-        Map<String, Integer> header = validateHeader(rows.get(0));
+        Map<String, Integer> header = validateHeader(rows.get(0), columnMapping);
         if (rows.size() == 1) {
             throw new DatasetUploadException(HttpStatus.BAD_REQUEST, "Dataset empty");
         }
@@ -230,10 +235,29 @@ public class DatasetService {
         return values;
     }
 
-    private Map<String, Integer> validateHeader(List<String> columns) {
-        Map<String, Integer> header = new LinkedHashMap<>();
+    private Map<String, Integer> validateHeader(List<String> columns, Map<String, String> columnMapping) {
+        Map<String, Integer> uploadedHeader = new LinkedHashMap<>();
         for (int index = 0; index < columns.size(); index++) {
-            header.put(normalize(columns.get(index)), index);
+            uploadedHeader.put(normalize(columns.get(index)), index);
+        }
+
+        Map<String, Integer> header = new LinkedHashMap<>();
+        for (String requiredColumn : REQUIRED_COLUMNS) {
+            String mappedColumn = columnMapping == null ? "" : columnMapping.getOrDefault(requiredColumn, "");
+            String sourceColumn = mappedColumn.isBlank() ? requiredColumn : mappedColumn;
+            Integer sourceIndex = uploadedHeader.get(normalize(sourceColumn));
+            if (sourceIndex != null) {
+                header.put(normalize(requiredColumn), sourceIndex);
+            }
+        }
+
+        for (String optionalColumn : List.of("City", "ProductID", "OrderID")) {
+            String mappedColumn = columnMapping == null ? "" : columnMapping.getOrDefault(optionalColumn, "");
+            String sourceColumn = mappedColumn.isBlank() ? optionalColumn : mappedColumn;
+            Integer sourceIndex = uploadedHeader.get(normalize(sourceColumn));
+            if (sourceIndex != null) {
+                header.put(normalize(optionalColumn), sourceIndex);
+            }
         }
 
         List<String> missing = REQUIRED_COLUMNS.stream()

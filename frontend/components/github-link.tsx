@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-const PROJECT_GITHUB_URL = "https://github.com/darshanpr/CPPA"
+const PROJECT_GITHUB_URL = "https://github.com/darshan-pr/PurchaseIQ"
 
 export function GitHubLink({ className }: { className?: string }) {
   return (

@@ -31,6 +31,9 @@ export type DatasetUploadResponse = {
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
+let datasetListCache: DatasetSummary[] | null = null
+const datasetDetailCache = new Map<number, DatasetDetail>()
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     const response = await fetch(`${API_URL}${path}`, {
@@ -53,35 +56,68 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export function listDatasets() {
-  return request<DatasetSummary[]>("/api/datasets")
+export async function listDatasets(forceRefresh = false) {
+  if (!forceRefresh && datasetListCache) {
+    return datasetListCache
+  }
+  datasetListCache = await request<DatasetSummary[]>("/api/datasets")
+  return datasetListCache
+}
+
+export function getCachedDatasets() {
+  return datasetListCache
 }
 
 export function getActiveDataset() {
   return request<DatasetSummary>("/api/datasets/active")
 }
 
-export function getDatasetDetails(id: number) {
-  return request<DatasetDetail>(`/api/datasets/${id}`)
+export async function getDatasetDetails(id: number, forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = datasetDetailCache.get(id)
+    if (cached) {
+      return cached
+    }
+  }
+  const detail = await request<DatasetDetail>(`/api/datasets/${id}`)
+  datasetDetailCache.set(id, detail)
+  return detail
 }
 
-export function activateDataset(id: number) {
-  return request<DatasetSummary>(`/api/datasets/${id}/activate`, {
+export function getCachedDatasetDetails(id: number) {
+  return datasetDetailCache.get(id) ?? null
+}
+
+export function clearDatasetCache() {
+  datasetListCache = null
+  datasetDetailCache.clear()
+}
+
+export async function activateDataset(id: number) {
+  const activated = await request<DatasetSummary>(`/api/datasets/${id}/activate`, {
     method: "PUT",
   })
+  clearDatasetCache()
+  return activated
 }
 
-export function deleteDataset(id: number) {
-  return request<void>(`/api/datasets/${id}`, {
+export async function deleteDataset(id: number) {
+  await request<void>(`/api/datasets/${id}`, {
     method: "DELETE",
   })
+  clearDatasetCache()
 }
 
-export function uploadDataset(file: File) {
+export async function uploadDataset(file: File, columnMapping?: Record<string, string>) {
   const formData = new FormData()
   formData.append("file", file)
-  return request<DatasetUploadResponse>("/api/datasets/upload", {
+  if (columnMapping && Object.keys(columnMapping).length > 0) {
+    formData.append("mapping", JSON.stringify(columnMapping))
+  }
+  const response = await request<DatasetUploadResponse>("/api/datasets/upload", {
     method: "POST",
     body: formData,
   })
+  clearDatasetCache()
+  return response
 }

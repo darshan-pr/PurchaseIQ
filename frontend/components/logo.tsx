@@ -7,7 +7,7 @@ export function Logo({ className, compact = false }: { className?: string; compa
     <div className={cn("flex items-center gap-2.5", className)}>
       <div className="flex size-10 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-sm ring-1 ring-black/10">
         <Image
-          src="/logo.png"
+          src="/purchaseiq-logo.png"
           alt="PurchaseIQ logo"
           width={40}
           height={40}

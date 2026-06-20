@@ -18,19 +18,34 @@ export function AnalyticsPage({
 }) {
   const [analytics, setAnalytics] = useState<AnalyticsPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [analyzingVersion, setAnalyzingVersion] = useState<number | null>(null)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    async function load() {
+    async function load(forceRefresh = false) {
       try {
-        setAnalytics(await getActiveAnalytics())
+        setError("")
+        setLoading(true)
+        setAnalytics(await getActiveAnalytics(forceRefresh))
       } catch (exception) {
         setError(exception instanceof Error ? exception.message : "Unable to load analytics")
       } finally {
         setLoading(false)
+        setAnalyzingVersion(null)
       }
     }
     void load()
+
+    function handleDatasetChanged(event: Event) {
+      const detail = (event as CustomEvent<{ version?: number }>).detail
+      setAnalyzingVersion(detail?.version ?? null)
+      void load(true)
+    }
+
+    window.addEventListener("purchaseiq:dataset-changed", handleDatasetChanged)
+    return () => {
+      window.removeEventListener("purchaseiq:dataset-changed", handleDatasetChanged)
+    }
   }, [])
 
   return (
@@ -53,7 +68,25 @@ export function AnalyticsPage({
         </div>
       </section>
 
-      {loading && (
+      {analyzingVersion && (
+        <Card className="overflow-hidden border-emerald-200 bg-white shadow-sm">
+          <CardContent className="grid gap-4 p-6 md:grid-cols-[auto_1fr] md:items-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+              <Loader2 className="size-7 animate-spin" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-neutral-950">
+                Analyzing dataset v{analyzingVersion}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-neutral-600">
+                Rebuilding the visible charts and tables for the newly selected active dataset.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {loading && !analyzingVersion && (
         <Card className="border-black/10 bg-white shadow-sm">
           <CardContent className="flex items-center gap-3 p-6 text-neutral-600">
             <Loader2 className="size-5 animate-spin text-emerald-700" />
@@ -74,7 +107,7 @@ export function AnalyticsPage({
         </Card>
       )}
 
-      {analytics && children(analytics)}
+      {analytics && !loading && children(analytics)}
     </div>
   )
 }
